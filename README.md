@@ -35,6 +35,18 @@ scripts/              проверки
 
 Назовите приложение в `apps/web` как `@canvas/web` и добавьте команды его запуска в README решения. Пока фронтенда нет, `npm run dev` запускает только API.
 
+## Фронтенд
+
+Приложение `@canvas/web` лежит в `apps/web`, подробности в [apps/web/README.md](apps/web/README.md).
+
+```sh
+npm run dev:web      # фронтенд на http://localhost:5173 при запущенном API
+npm run build:web    # сборка контрактов и фронтенда в apps/web/dist
+npm run check:web    # lint, typecheck и тесты фронтенда
+```
+
+`npm run check` проверяет и фронтенд.
+
 ```sh
 npm run check       # форматирование, сборка, тесты, OpenAPI
 npm run build
