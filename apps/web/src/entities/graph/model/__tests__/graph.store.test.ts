@@ -11,6 +11,7 @@ const setup = (halt = false) => {
   const save = vi.fn((_json: string, etag: string) => Promise.resolve(`${etag}+`));
   const readEtag = vi.fn(() => Promise.resolve('"server"'));
   const store = createGraphStore({
+    spaceId: 's1',
     graph: toGraph(chainGraph()),
     etag: '"0"',
     delayMs: DELAY_MS,
@@ -133,6 +134,13 @@ describe('createGraphStore', () => {
       expect.stringContaining('"viewport":{"x":100,"y":50,"zoom":2}'),
       '"0"',
     );
+  });
+
+  it('flush без правок отдаёт текущий ETag без запроса', async () => {
+    const { store, save } = setup();
+
+    await expect(store.getState().flush()).resolves.toBe('"0"');
+    expect(save).not.toHaveBeenCalled();
   });
 
   it('flush отправляет несохранённое сразу и отдаёт новый ETag', async () => {

@@ -27,6 +27,7 @@ import { serializeGraph } from './to-graph';
 export type Scenario = 'success' | 'failure';
 
 export interface GraphStoreOptions {
+  spaceId: string;
   graph: GraphData;
   etag: string;
   delayMs: number;
@@ -36,6 +37,7 @@ export interface GraphStoreOptions {
 }
 
 export interface GraphState extends GraphSnapshot {
+  spaceId: string;
   etag: string;
   save: SaverState;
   indexes: GraphIndexes;
@@ -47,8 +49,8 @@ export interface GraphState extends GraphSnapshot {
   setPromptText: (nodeId: string, text: string) => void;
   addNode: (type: GraphNodeType, position: XYPosition) => void;
   setScenario: (nodeId: string, scenario: Scenario) => void;
-  flush: () => Promise<string | undefined>;
-  overwriteServer: () => Promise<string | undefined>;
+  flush: () => Promise<string>;
+  overwriteServer: () => Promise<string>;
 }
 
 const labels: Record<Exclude<GraphNodeType, 'prompt'>, string> = {
@@ -72,6 +74,7 @@ const hasType = <T extends { type: string }>(changes: T[], types: Set<T['type']>
 };
 
 export const createGraphStore = ({
+  spaceId,
   graph,
   etag,
   delayMs,
@@ -102,6 +105,7 @@ export const createGraphStore = ({
       set({ nodes, edges, indexes: indexGraph(nodes, edges) });
 
     return {
+      spaceId,
       nodes: graph.nodes,
       edges: graph.edges,
       viewport: graph.viewport,
@@ -153,12 +157,12 @@ export const createGraphStore = ({
       setScenario: (nodeId, scenario) =>
         set({ scenarios: { ...get().scenarios, [nodeId]: scenario } }),
 
-      flush: () => saver.flush(),
+      flush: async () => (await saver.flush()) ?? get().etag,
 
       overwriteServer: async () => {
         set({ etag: await readEtag() });
         saver.resume();
-        return saver.flush();
+        return (await saver.flush()) ?? get().etag;
       },
     };
   });

@@ -17,6 +17,7 @@ const isVersionConflict = (error: unknown) => isApiError(error) && error.status 
 export const GraphStoreProvider = ({ spaceId, graph, etag, children }: GraphStoreProviderProps) => {
   const [store] = useState(() =>
     createGraphStore({
+      spaceId,
       graph,
       etag,
       delayMs: saveDebounceMs,

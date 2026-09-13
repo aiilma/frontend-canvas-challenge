@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   Background,
   BackgroundVariant,
@@ -8,7 +9,10 @@ import {
 } from '@xyflow/react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { canConnect, nodeTypes, useGraphStore, useGraphStoreApi } from '@/entities/graph';
+import { canConnect, type GraphEdge, useGraphStore, useGraphStoreApi } from '@/entities/graph';
+import { useGenerations } from '@/entities/generation';
+
+import { nodeTypes } from './nodes/node-types';
 
 const nodeExtent: [[number, number], [number, number]] = [
   [-10000, -10000],
@@ -16,6 +20,12 @@ const nodeExtent: [[number, number], [number, number]] = [
 ];
 
 const deleteKeys = ['Backspace', 'Delete'];
+
+const animateProcessing = (edges: GraphEdge[], processingKey: string) => {
+  if (!processingKey) return edges;
+  const processing = new Set(processingKey.split(','));
+  return edges.map((edge) => (processing.has(edge.source) ? { ...edge, animated: true } : edge));
+};
 
 export const SpaceCanvas = () => {
   const store = useGraphStoreApi();
@@ -32,6 +42,10 @@ export const SpaceCanvas = () => {
       })),
     );
 
+  const { index } = useGenerations(store.getState().spaceId);
+  const processingKey = index?.processing.join(',') ?? '';
+  const shownEdges = useMemo(() => animateProcessing(edges, processingKey), [edges, processingKey]);
+
   const isValidConnection = (connection: Connection | Edge) =>
     canConnect(connection, store.getState().indexes);
 
@@ -39,7 +53,7 @@ export const SpaceCanvas = () => {
     <main className="min-h-0 flex-1">
       <ReactFlow
         nodes={nodes}
-        edges={edges}
+        edges={shownEdges}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}

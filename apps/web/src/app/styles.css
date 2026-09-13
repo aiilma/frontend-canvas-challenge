@@ -145,3 +145,13 @@
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge.animated .react-flow__edge-path {
+    animation: none;
+  }
+}

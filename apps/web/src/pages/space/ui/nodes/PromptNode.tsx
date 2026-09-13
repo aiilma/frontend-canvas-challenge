@@ -3,8 +3,8 @@ import { Handle, type NodeProps, Position } from '@xyflow/react';
 
 import { Label } from '@/shared/ui/shadcn/label';
 
-import { useGraphStore } from '../model/graph-store-context';
-import { type PromptNode as PromptNodeType } from '../model/graph.types';
+import { useGraphStore } from '@/entities/graph';
+import { type PromptNode as PromptNodeType } from '@/entities/graph';
 import { NodeFrame } from './NodeFrame';
 
 export const PromptNode = ({ id, data, selected }: NodeProps<PromptNodeType>) => {

@@ -15,4 +15,3 @@ export { canConnect, completeChain, indexGraph, type GraphIndexes } from './mode
 export { saveStatusLabel } from './model/save-status';
 export { serializeGraph, toGraph } from './model/to-graph';
 export { GraphStoreProvider } from './ui/GraphStoreProvider';
-export { nodeTypes } from './ui/node-types';
