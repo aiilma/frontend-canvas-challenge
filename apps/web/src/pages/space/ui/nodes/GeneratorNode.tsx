@@ -37,6 +37,7 @@ export const GeneratorNode = ({ id, data, selected }: NodeProps<GeneratorNodeTyp
   const setScenario = useGraphStore((state) => state.setScenario);
   const isChainComplete = useGraphStore((state) => completeChain(id, state.indexes) !== null);
   const flush = useGraphStore((state) => state.flush);
+  const haltOnConflict = useGraphStore((state) => state.haltOnConflict);
   const { index, error: pollError, refetch } = useGenerations(spaceId);
   const { start, isPending, error, reset } = useStartGeneration(spaceId);
   const [attempted, setAttempted] = useState(false);
@@ -52,7 +53,7 @@ export const GeneratorNode = ({ id, data, selected }: NodeProps<GeneratorNodeTyp
     setAttempted(true);
     if (!isChainComplete) return;
     void flush()
-      .then((graphETag) => start({ nodeId: id, graphETag, scenario }))
+      .then((graphETag) => start({ nodeId: id, graphETag, scenario }, { onError: haltOnConflict }))
       .catch(() => undefined);
   };
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { makeGeneration } from '@test/factories/generation';
 import { generatorId, nodeId, resultId } from '@test/factories/graph';
 
-import { hasProcessing, indexGenerations, resultFor } from '../generation-index';
+import { attemptFor, hasProcessing, indexGenerations } from '../generation-index';
 
 const otherResult = nodeId(23);
 
@@ -18,21 +18,22 @@ describe('indexGenerations', () => {
     expect([...index.processing]).toEqual([generatorId]);
   });
 
-  it('готовый результат показывается только для последней попытки своего генератора', () => {
+  it('нода результата видит только последнюю попытку своего генератора', () => {
     const done = makeGeneration({ status: 'succeeded' });
-    expect(resultFor(resultId, indexGenerations([done]))).toBe(done);
+    expect(attemptFor(resultId, indexGenerations([done]))).toBe(done);
 
-    const rewired = makeGeneration({ status: 'succeeded', resultNodeId: otherResult });
+    const rewired = makeGeneration({ status: 'processing', resultNodeId: otherResult });
     const index = indexGenerations([rewired, done]);
-    expect(resultFor(resultId, index)).toBeNull();
-    expect(resultFor(otherResult, index)).toBe(rewired);
+    expect(attemptFor(resultId, index)).toBeNull();
+    expect(attemptFor(otherResult, index)).toBe(rewired);
   });
 
-  it('отказ и обработка не дают результата', () => {
-    expect(
-      resultFor(resultId, indexGenerations([makeGeneration({ status: 'failed' })])),
-    ).toBeNull();
-    expect(resultFor(resultId, indexGenerations([makeGeneration()]))).toBeNull();
+  it('отказ переподключённого генератора не остаётся на прежней ноде результата', () => {
+    const failed = makeGeneration({ status: 'failed' });
+    expect(attemptFor(resultId, indexGenerations([failed]))).toBe(failed);
+
+    const rewired = makeGeneration({ status: 'failed', resultNodeId: otherResult });
+    expect(attemptFor(resultId, indexGenerations([rewired, failed]))).toBeNull();
   });
 
   it('опрос нужен, пока есть незавершённая генерация', () => {

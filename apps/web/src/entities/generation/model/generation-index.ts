@@ -20,10 +20,10 @@ export const indexGenerations = (generations: GenerationData[]): GenerationIndex
   return { byGenerator, byResult, processing };
 };
 
-export const resultFor = (resultNodeId: string, index: GenerationIndex) => {
+export const attemptFor = (resultNodeId: string, index: GenerationIndex) => {
   const generation = index.byResult.get(resultNodeId);
   if (!generation || index.byGenerator.get(generation.nodeId) !== generation) return null;
-  return generation.status === 'succeeded' ? generation : null;
+  return generation;
 };
 
 export const hasProcessing = (generations: GenerationData[]) => {

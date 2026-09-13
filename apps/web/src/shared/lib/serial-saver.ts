@@ -14,6 +14,7 @@ export interface SerialSaverOptions<S, R> {
 export interface SerialSaver<S, R> {
   schedule: (snapshot: S) => void;
   flush: () => Promise<R | undefined>;
+  halt: (error: unknown) => void;
   resume: () => void;
   getState: () => SaverState;
   subscribe: (listener: () => void) => () => void;
@@ -93,6 +94,11 @@ export const createSerialSaver = <S, R>({
     });
   };
 
+  const halt = (error: unknown) => {
+    clearTimer();
+    setState('halted', error);
+  };
+
   const resume = () => {
     if (state.status !== 'halted') return;
     setState(pending === null ? 'idle' : 'dirty');
@@ -105,5 +111,5 @@ export const createSerialSaver = <S, R>({
     };
   };
 
-  return { schedule, flush, resume, getState: () => state, subscribe };
+  return { schedule, flush, halt, resume, getState: () => state, subscribe };
 };
