@@ -22,7 +22,7 @@ export const GraphStoreProvider = ({ spaceId, graph, etag, children }: GraphStor
       etag,
       delayMs: saveDebounceMs,
       save: (json, ifMatch) => putGraph(spaceId, json, ifMatch).then((saved) => saved.etag),
-      readEtag: () => getGraph(spaceId).then((current) => current.etag),
+      readServer: () => getGraph(spaceId),
       shouldHalt: isVersionConflict,
     }),
   );

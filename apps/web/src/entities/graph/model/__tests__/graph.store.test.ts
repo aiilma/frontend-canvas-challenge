@@ -1,25 +1,31 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { chainGraph, generatorId, promptId, resultId } from '@test/factories/graph';
+import { chainGraph, generatorId, makePromptNode, promptId, resultId } from '@test/factories/graph';
 
 import { toGraph } from '../to-graph';
 import { createGraphStore } from '../graph.store';
 
 const DELAY_MS = 500;
 
-const setup = (halt = false) => {
+const serverGraph = (text: string) => {
+  const graph = chainGraph();
+  graph.nodes[0] = makePromptNode(text);
+  return { graph: toGraph(graph), etag: '"server"' };
+};
+
+const setup = (halt = false, serverText = 'Горы на рассвете') => {
   const save = vi.fn((_json: string, etag: string) => Promise.resolve(`${etag}+`));
-  const readEtag = vi.fn(() => Promise.resolve('"server"'));
+  const readServer = vi.fn(() => Promise.resolve(serverGraph(serverText)));
   const store = createGraphStore({
     spaceId: 's1',
     graph: toGraph(chainGraph()),
     etag: '"0"',
     delayMs: DELAY_MS,
     save,
-    readEtag,
+    readServer,
     shouldHalt: () => halt,
   });
-  return { store, save, readEtag };
+  return { store, save, readServer };
 };
 
 const settle = () => vi.advanceTimersByTimeAsync(DELAY_MS);
@@ -117,6 +123,43 @@ describe('createGraphStore', () => {
     expect(store.getState().indexes.sourceOfInput.get(generatorId)).toBe(promptId);
   });
 
+  it('после потерянного ответа повтор сначала сверяется с сервером и не шлёт PUT, если правка уже дошла', async () => {
+    const { store, save, readServer } = setup(false, 'Море');
+    save.mockRejectedValueOnce(new Error('offline'));
+
+    store.getState().setPromptText(promptId, 'Море');
+    await settle();
+    expect(store.getState().save.status).toBe('error');
+
+    await expect(store.getState().flush()).resolves.toBe('"server"');
+    expect(readServer).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(store.getState().save.status).toBe('idle');
+  });
+
+  it('после потерянного ответа при расхождении с сервером повтор отправляет PUT', async () => {
+    const { store, save, readServer } = setup(false, 'Другой текст');
+    save.mockRejectedValueOnce(new Error('offline'));
+
+    store.getState().setPromptText(promptId, 'Море');
+    await settle();
+
+    await expect(store.getState().flush()).resolves.toBe('"0"+');
+    expect(readServer).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(2);
+  });
+
+  it('ввод текста обновляет запись ноды в индексе без пересборки связей', () => {
+    const { store } = setup();
+    const before = store.getState().indexes;
+
+    store.getState().setPromptText(promptId, 'Море');
+    const after = store.getState().indexes;
+
+    expect(after.sourceOfInput).toBe(before.sourceOfInput);
+    expect(after.nodeById.get(promptId)?.data).toEqual({ text: 'Море' });
+  });
+
   it('ноды и связи получают русские имена для чтения с экрана', () => {
     const { store } = setup();
     store.getState().addNode('prompt', { x: 0, y: 0 });
@@ -196,7 +239,7 @@ describe('createGraphStore', () => {
   });
 
   it('конфликт останавливает сохранение, запись своей версии берёт свежий ETag', async () => {
-    const { store, save, readEtag } = setup(true);
+    const { store, save, readServer } = setup(true);
     save.mockRejectedValueOnce(new Error('412'));
 
     store.getState().setPromptText(promptId, 'Море');
@@ -207,7 +250,7 @@ describe('createGraphStore', () => {
     expect(save).toHaveBeenCalledTimes(1);
 
     await expect(store.getState().overwriteServer()).resolves.toBe('"server"+');
-    expect(readEtag).toHaveBeenCalledTimes(1);
+    expect(readServer).toHaveBeenCalledTimes(1);
     expect(save).toHaveBeenLastCalledWith(expect.stringContaining('Море и горы'), '"server"');
     expect(store.getState().save.status).toBe('idle');
   });

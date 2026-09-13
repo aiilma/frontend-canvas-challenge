@@ -79,7 +79,7 @@ export const RadioCards = ({
           </RadioGroupItem>
         ))}
       </RadioGroup>
-      {error && (
+      {error !== undefined && (
         <InlineError id={errorId} tone={tone} className="mt-2">
           {error}
         </InlineError>

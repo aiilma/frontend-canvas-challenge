@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+
 import {
   type AriaLabelConfig,
   Background,
@@ -37,9 +38,8 @@ const ariaLabels: Partial<AriaLabelConfig> = {
   'handle.ariaLabel': 'Порт для связи',
 };
 
-const animateProcessing = (edges: GraphEdge[], processingKey: string) => {
-  if (!processingKey) return edges;
-  const processing = new Set(processingKey.split(','));
+const animateProcessing = (edges: GraphEdge[], processing: Set<string> | undefined) => {
+  if (!processing?.size) return edges;
   return edges.map((edge) => (processing.has(edge.source) ? { ...edge, animated: true } : edge));
 };
 
@@ -57,9 +57,10 @@ export const SpaceCanvas = () => {
         setViewport: state.setViewport,
       })),
     );
-  const { index } = useGenerations(store.getState().spaceId);
-  const processingKey = index?.processing.join(',') ?? '';
-  const shownEdges = useMemo(() => animateProcessing(edges, processingKey), [edges, processingKey]);
+  const spaceId = useGraphStore((state) => state.spaceId);
+  const { index } = useGenerations(spaceId);
+  const processing = index?.processing;
+  const shownEdges = useMemo(() => animateProcessing(edges, processing), [edges, processing]);
 
   const isValidConnection = (connection: Connection | Edge) =>
     canConnect(connection, store.getState().indexes);

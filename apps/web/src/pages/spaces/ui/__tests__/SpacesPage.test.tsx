@@ -70,10 +70,9 @@ describe('SpacesPage', () => {
   it('после создания открывается канвас нового пространства', async () => {
     server.use(
       listHandler([]),
-      http.post(api('/api/spaces'), async ({ request }) => {
-        const { title } = (await request.json()) as { title: string };
-        return jsonResponse(makeSpace({ title }), { status: 201 });
-      }),
+      http.post(api('/api/spaces'), () =>
+        jsonResponse(makeSpace({ title: 'Новый канвас' }), { status: 201 }),
+      ),
     );
     const { user } = renderPage();
 

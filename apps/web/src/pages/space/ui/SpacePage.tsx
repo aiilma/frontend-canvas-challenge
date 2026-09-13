@@ -1,10 +1,12 @@
 import { type ReactNode } from 'react';
+
 import { ReactFlowProvider } from '@xyflow/react';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 
 import { ButtonLink } from '@/shared/ui/ButtonLink';
 import { ErrorBar } from '@/shared/ui/ErrorBar';
 import { SkipLink } from '@/shared/ui/SkipLink';
+import { Wordmark } from '@/shared/ui/Wordmark';
 import { GraphStoreProvider, useGraph } from '@/entities/graph';
 import { useSpace } from '@/entities/space';
 
@@ -12,12 +14,18 @@ import { ConflictBar } from './ConflictBar';
 import { SpaceCanvas } from './SpaceCanvas';
 import { SpaceTopbar } from './SpaceTopbar';
 
-const Placeholder = ({ children }: { children: ReactNode }) => (
+interface PlaceholderProps {
+  children: ReactNode;
+}
+
+interface SpaceBodyProps {
+  spaceId: string;
+}
+
+const Placeholder = ({ children }: PlaceholderProps) => (
   <>
     <header className="flex min-h-13 items-center px-3 md:px-5">
-      <Link to="/" className="font-medium">
-        Canvas
-      </Link>
+      <Wordmark />
     </header>
     <main id="main" className="flex flex-col items-start gap-6 px-3 pt-12 md:px-5">
       {children}
@@ -25,7 +33,7 @@ const Placeholder = ({ children }: { children: ReactNode }) => (
   </>
 );
 
-const SpaceBody = ({ spaceId }: { spaceId: string }) => {
+const SpaceBody = ({ spaceId }: SpaceBodyProps) => {
   const { space, error: spaceError, refetch: refetchSpace } = useSpace(spaceId);
   const { versioned, isLoading, error, refetch } = useGraph(spaceId);
   const failure = error ?? spaceError;
@@ -60,7 +68,7 @@ const SpaceBody = ({ spaceId }: { spaceId: string }) => {
   }
 
   return (
-    <GraphStoreProvider key={versioned.etag} spaceId={spaceId} {...versioned}>
+    <GraphStoreProvider key={`${spaceId}:${versioned.etag}`} spaceId={spaceId} {...versioned}>
       <ReactFlowProvider>
         <SpaceTopbar title={space?.title ?? ''} />
         <ConflictBar onReload={() => void refetch()} />

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { Query, useQuery } from '@tanstack/react-query';
 import { waitFor } from '@testing-library/react';
 import { http } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,9 +7,11 @@ import { type GenerationData } from '@canvas/contracts';
 
 import { api, counting, errorResponse, jsonResponse } from '@test/mocks/api';
 import { server } from '@test/mocks/server';
+import { createTestQueryClient } from '@test/utils/query-client';
 import { renderHookWithProviders } from '@test/utils/render-hook';
 
-import { pollingOptions } from '../polling';
+import { ApiError } from '../error';
+import { maxPollFailures, pollingOptions } from '../polling';
 import { request } from '../request';
 
 type Generation = Pick<GenerationData, 'status'>;
@@ -67,6 +69,35 @@ describe('pollingOptions', () => {
     await vi.advanceTimersByTimeAsync(INTERVAL_MS * 5);
 
     expect(calls()).toBeLessThanOrEqual(atUnmount + 1);
+  });
+
+  it('сетевой сбой при наличии данных не останавливает опрос, десять интервалов без ответа останавливают', () => {
+    const { refetchInterval } = pollingOptions<Generation>(isProcessing, INTERVAL_MS);
+    const network = new ApiError({ kind: 'network', code: 'NETWORK_ERROR', message: 'Нет связи' });
+    const state = (silentForMs: number) =>
+      new Query<Generation, ApiError>({
+        client: createTestQueryClient(),
+        queryKey: ['generation', 'g1'],
+        queryHash: 'generation',
+        state: {
+          data: { status: 'processing' },
+          dataUpdatedAt: 1000,
+          error: network,
+          errorUpdatedAt: 1000 + silentForMs,
+          errorUpdateCount: 1,
+          fetchFailureCount: 1,
+          fetchFailureReason: network,
+          fetchMeta: null,
+          isInvalidated: false,
+          status: 'error',
+          fetchStatus: 'idle',
+          dataUpdateCount: 1,
+        },
+      });
+
+    expect(refetchInterval(state(INTERVAL_MS))).toBe(INTERVAL_MS);
+    expect(refetchInterval(state(INTERVAL_MS * (maxPollFailures - 1)))).toBe(INTERVAL_MS);
+    expect(refetchInterval(state(INTERVAL_MS * maxPollFailures))).toBe(false);
   });
 
   it('ошибка API останавливает опрос', async () => {

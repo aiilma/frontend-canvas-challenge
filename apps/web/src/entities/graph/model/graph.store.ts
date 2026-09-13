@@ -24,6 +24,11 @@ import {
 } from './graph.types';
 import { serializeGraph } from './to-graph';
 
+export interface ServerGraph {
+  graph: GraphData;
+  etag: string;
+}
+
 export type Scenario = 'success' | 'failure';
 
 export interface GraphStoreOptions {
@@ -32,7 +37,7 @@ export interface GraphStoreOptions {
   etag: string;
   delayMs: number;
   save: (json: string, etag: string) => Promise<string>;
-  readEtag: () => Promise<string>;
+  readServer: () => Promise<ServerGraph>;
   shouldHalt: (error: unknown) => boolean;
 }
 
@@ -131,11 +136,24 @@ export const createGraphStore = ({
   etag,
   delayMs,
   save,
-  readEtag,
+  readServer,
   shouldHalt,
 }: GraphStoreOptions) =>
   createStore<GraphState>((set, get) => {
-    let lastSentJson = JSON.stringify(graph);
+    let lastSentJson = serializeGraph(graph);
+    let lostAnswerFor: string | null = null;
+
+    const adopt = (json: string, etag: string) => {
+      lastSentJson = json;
+      lostAnswerFor = null;
+      set({ etag });
+      return etag;
+    };
+
+    const alreadyOnServer = async (json: string) => {
+      const server = await readServer();
+      return serializeGraph(server.graph) === json ? server.etag : null;
+    };
 
     const saver = createSerialSaver<GraphSnapshot, string>({
       delayMs,
@@ -143,10 +161,14 @@ export const createGraphStore = ({
       save: async (snapshot) => {
         const json = serializeGraph(snapshot);
         if (json === lastSentJson) return get().etag;
-        const nextEtag = await save(json, get().etag);
-        lastSentJson = json;
-        set({ etag: nextEtag });
-        return nextEtag;
+        const landed = lostAnswerFor === json ? await alreadyOnServer(json) : null;
+        if (landed !== null) return adopt(json, landed);
+        try {
+          return adopt(json, await save(json, get().etag));
+        } catch (error) {
+          if (!shouldHalt(error)) lostAnswerFor = json;
+          throw error;
+        }
       },
     });
     saver.subscribe(() => set({ save: saver.getState() }));
@@ -211,10 +233,15 @@ export const createGraphStore = ({
       },
 
       setPromptText: (nodeId, text) => {
-        const nodes = get().nodes.map((node) =>
-          node.id === nodeId && node.type === 'prompt' ? { ...node, data: { text } } : node,
-        );
-        setGraph(nodes, get().edges);
+        const { nodes, indexes } = get();
+        const node = indexes.nodeById.get(nodeId);
+        if (node?.type !== 'prompt') return;
+        const updated: GraphNode = { ...node, data: { text } };
+        indexes.nodeById.set(nodeId, updated);
+        set({
+          nodes: nodes.map((item) => (item.id === nodeId ? updated : item)),
+          indexes: { ...indexes },
+        });
         schedule();
       },
 
@@ -231,7 +258,7 @@ export const createGraphStore = ({
       flush: async () => (await saver.flush()) ?? get().etag,
 
       overwriteServer: async () => {
-        set({ etag: await readEtag() });
+        set({ etag: (await readServer()).etag });
         saver.resume();
         return (await saver.flush()) ?? get().etag;
       },

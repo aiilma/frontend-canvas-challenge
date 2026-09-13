@@ -1,6 +1,7 @@
+import { type ComponentProps } from 'react';
+
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Slot } from 'radix-ui';
-import { type ComponentProps } from 'react';
 
 import { hoverUnderline } from '@/shared/lib/classes';
 import { cn } from '@/shared/lib/cn';

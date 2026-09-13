@@ -1,8 +1,8 @@
 import { useReactFlow } from '@xyflow/react';
-import { Link } from 'react-router';
 
 import { maxNodes } from '@/shared/config/limits';
 import { TextAction } from '@/shared/ui/TextAction';
+import { Wordmark } from '@/shared/ui/Wordmark';
 import {
   connectableSelection,
   type GraphNodeType,
@@ -16,7 +16,17 @@ interface SpaceTopbarProps {
   title: string;
 }
 
-const nodeTypes: GraphNodeType[] = ['prompt', 'generator', 'result'];
+const addableTypes: GraphNodeType[] = ['prompt', 'generator', 'result'];
+const columns = 3;
+const columnStep = 300;
+const rowStep = 240;
+const nodeWidth = 240;
+const nodeHeight = 200;
+
+const nextPosition = (count: number) => ({
+  x: window.innerWidth / 2 + ((count % columns) - 1) * columnStep - nodeWidth / 2,
+  y: window.innerHeight / 2 + (Math.floor(count / columns) % columns) * rowStep - nodeHeight / 2,
+});
 
 export const SpaceTopbar = ({ title }: SpaceTopbarProps) => {
   const count = useGraphStore((state) => state.nodes.length);
@@ -28,24 +38,13 @@ export const SpaceTopbar = ({ title }: SpaceTopbarProps) => {
   const { screenToFlowPosition } = useReactFlow();
   const isFull = count >= maxNodes;
 
-  const handleAdd = (type: GraphNodeType) => {
-    const column = count % 3;
-    const row = Math.floor(count / 3) % 3;
-    addNode(
-      type,
-      screenToFlowPosition({
-        x: window.innerWidth / 2 + (column - 1) * 300 - 120,
-        y: window.innerHeight / 2 + row * 240 - 100,
-      }),
-    );
-  };
+  const handleAdd = (type: GraphNodeType) =>
+    addNode(type, screenToFlowPosition(nextPosition(count)));
 
   return (
     <header className="flex min-h-13 shrink-0 flex-wrap items-center gap-x-12 gap-y-1 bg-page px-3 py-2 md:px-5">
       <div className="flex min-w-0 grow items-baseline gap-3">
-        <Link to="/" className="font-medium">
-          Canvas
-        </Link>
+        <Wordmark />
         <h1 className="truncate text-body text-muted" title={title}>
           {title}
         </h1>
@@ -56,7 +55,7 @@ export const SpaceTopbar = ({ title }: SpaceTopbarProps) => {
         aria-label="Действия с нодами"
         className="ms-auto flex flex-wrap items-center gap-x-6 gap-y-1"
       >
-        {nodeTypes.map((type) => (
+        {addableTypes.map((type) => (
           <TextAction key={type} glyph="plus" disabled={isFull} onClick={() => handleAdd(type)}>
             {nodeTypeLabels[type]}
           </TextAction>

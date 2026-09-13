@@ -10,7 +10,7 @@ export interface VersionedGraph {
 
 const graphPath = (spaceId: string) => `/api/spaces/${spaceId}/graph`;
 
-const versioned = ({ data, etag }: ApiResponse<GraphData>): VersionedGraph => {
+const toVersioned = ({ data, etag }: ApiResponse<GraphData>): VersionedGraph => {
   if (etag === null) {
     throw new ApiError({
       kind: 'parse',
@@ -22,9 +22,9 @@ const versioned = ({ data, etag }: ApiResponse<GraphData>): VersionedGraph => {
 };
 
 export const getGraph = (spaceId: string, signal?: AbortSignal) =>
-  requestWithMeta<GraphData>({ method: 'GET', path: graphPath(spaceId), signal }).then(versioned);
+  requestWithMeta<GraphData>({ method: 'GET', path: graphPath(spaceId), signal }).then(toVersioned);
 
 export const putGraph = (spaceId: string, json: string, ifMatch: string) =>
   requestWithMeta<GraphData>({ method: 'PUT', path: graphPath(spaceId), body: json, ifMatch }).then(
-    versioned,
+    toVersioned,
   );

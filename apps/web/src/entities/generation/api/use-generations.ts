@@ -17,5 +17,5 @@ export const useGenerations = (spaceId: string) => {
     ...polling,
   });
 
-  return { index: query.data, error: query.error };
+  return { index: query.data, error: query.error, refetch: query.refetch };
 };

@@ -1,9 +1,11 @@
 import { useId, useState } from 'react';
+
 import { Handle, type NodeProps, Position } from '@xyflow/react';
 
 import { InlineError } from '@/shared/ui/InlineError';
 import { RadioCards } from '@/shared/ui/RadioCards';
 import { Button } from '@/shared/ui/shadcn/button';
+import { TextAction } from '@/shared/ui/TextAction';
 import {
   completeChain,
   type GeneratorNode as GeneratorNodeType,
@@ -23,14 +25,19 @@ const incompleteChainHint = 'Соедините непустой текст, г�
 
 const isScenario = (value: string): value is Scenario => value === 'success' || value === 'failure';
 
+const progressLabelFor = (isPending: boolean, isProcessing: boolean) => {
+  if (isPending) return 'Запускаем…';
+  if (isProcessing) return 'Генерируем…';
+  return null;
+};
+
 export const GeneratorNode = ({ id, data, selected }: NodeProps<GeneratorNodeType>) => {
   const spaceId = useGraphStore((state) => state.spaceId);
   const scenario = useGraphStore((state) => state.scenarios[id] ?? 'success');
   const setScenario = useGraphStore((state) => state.setScenario);
   const isChainComplete = useGraphStore((state) => completeChain(id, state.indexes) !== null);
   const flush = useGraphStore((state) => state.flush);
-  const saveStatus = useGraphStore((state) => state.save.status);
-  const { index } = useGenerations(spaceId);
+  const { index, error: pollError, refetch } = useGenerations(spaceId);
   const { start, isPending, error, reset } = useStartGeneration(spaceId);
   const [attempted, setAttempted] = useState(false);
   const hintId = useId();
@@ -49,7 +56,7 @@ export const GeneratorNode = ({ id, data, selected }: NodeProps<GeneratorNodeTyp
       .catch(() => undefined);
   };
 
-  const progressLabel = isPending ? 'Запускаем…' : isProcessing ? 'Генерируем…' : null;
+  const progressLabel = progressLabelFor(isPending, isProcessing);
   const buttonLabel = progressLabel ?? (isFailed || error ? 'Повторить' : 'Сгенерировать');
 
   return (
@@ -73,7 +80,7 @@ export const GeneratorNode = ({ id, data, selected }: NodeProps<GeneratorNodeTyp
         <Button
           variant="brand"
           className="nodrag w-full"
-          disabled={isPending || isProcessing || saveStatus === 'saving'}
+          disabled={isPending || isProcessing}
           aria-describedby={showIncomplete ? hintId : undefined}
           onClick={handleGenerate}
         >
@@ -82,7 +89,15 @@ export const GeneratorNode = ({ id, data, selected }: NodeProps<GeneratorNodeTyp
         <span role="status" className="sr-only">
           {progressLabel ?? (isFailed ? 'Отказ генерации' : '')}
         </span>
-        {hint && <InlineError>{hint}</InlineError>}
+        {hint !== null && <InlineError>{hint}</InlineError>}
+        {pollError !== null && isProcessing && (
+          <InlineError>
+            {pollError.message}
+            <TextAction glyph="arrow" className="text-caption" onClick={() => void refetch()}>
+              Повторить
+            </TextAction>
+          </InlineError>
+        )}
         {showIncomplete && <InlineError id={hintId}>{incompleteChainHint}</InlineError>}
       </div>
       <Handle type="target" position={Position.Left} />

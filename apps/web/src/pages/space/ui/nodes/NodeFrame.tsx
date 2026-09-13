@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+
 import { useReactFlow } from '@xyflow/react';
 
 import { cn } from '@/shared/lib/cn';
@@ -12,6 +13,12 @@ interface NodeFrameProps {
   failed?: boolean;
   children: ReactNode;
 }
+
+const borderClass = (failed: boolean, selected: boolean) => {
+  if (failed) return 'border-accent';
+  if (selected) return 'border-ink';
+  return 'border-hairline';
+};
 
 const focusNextNode = () => {
   const node = document.querySelector<HTMLElement>('.react-flow__node');
@@ -30,7 +37,7 @@ export const NodeFrame = ({ id, title, selected, failed = false, children }: Nod
     <div
       className={cn(
         'relative flex w-60 flex-col gap-4 border bg-surface p-3',
-        failed ? 'border-accent' : selected ? 'border-ink' : 'border-hairline',
+        borderClass(failed, selected),
       )}
     >
       <div className="flex items-center justify-between gap-2">

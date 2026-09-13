@@ -18,7 +18,7 @@ export const ButtonLink = ({
   ...props
 }: ButtonLinkProps) => (
   <Link className={cn(buttonVariants({ variant, tone }), className)} {...props}>
-    {glyph && <Glyph name={glyph} />}
+    {glyph !== undefined && <Glyph name={glyph} />}
     {children}
   </Link>
 );

@@ -21,7 +21,7 @@ export const ConflictBar = ({ onReload }: ConflictBarProps) => {
         <TextAction glyph="arrow" onClick={onReload}>
           Загрузить версию с сервера
         </TextAction>
-        <TextAction glyph="arrow" onClick={() => void overwriteServer()}>
+        <TextAction glyph="arrow" onClick={() => void overwriteServer().catch(() => undefined)}>
           Заменить версию на сервере
         </TextAction>
       </div>

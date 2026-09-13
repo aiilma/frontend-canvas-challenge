@@ -15,7 +15,7 @@ describe('indexGenerations', () => {
 
     expect(index.byGenerator.get(generatorId)).toBe(newest);
     expect(index.byResult.get(resultId)).toBe(newest);
-    expect(index.processing).toEqual([generatorId]);
+    expect([...index.processing]).toEqual([generatorId]);
   });
 
   it('готовый результат показывается только для последней попытки своего генератора', () => {

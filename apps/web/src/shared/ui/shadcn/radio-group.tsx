@@ -1,5 +1,6 @@
-import { RadioGroup as RadioGroupPrimitive } from 'radix-ui';
 import { type ComponentProps } from 'react';
+
+import { RadioGroup as RadioGroupPrimitive } from 'radix-ui';
 
 import { cn } from '@/shared/lib/cn';
 import { Glyph } from '@/shared/ui/Glyph';

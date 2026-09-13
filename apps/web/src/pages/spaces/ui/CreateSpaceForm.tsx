@@ -20,6 +20,7 @@ export const CreateSpaceForm = ({ onCreated }: CreateSpaceFormProps) => {
   const messageId = `${fieldId}-message`;
   const validation = submitted ? titleError(title) : null;
   const message = validation ?? error?.message ?? null;
+  const isInvalid = validation !== null;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -39,15 +40,15 @@ export const CreateSpaceForm = ({ onCreated }: CreateSpaceFormProps) => {
           id={fieldId}
           value={title}
           maxLength={maxTitleLength}
-          aria-invalid={validation ? true : undefined}
-          aria-describedby={message ? messageId : undefined}
+          aria-invalid={isInvalid || undefined}
+          aria-describedby={message === null ? undefined : messageId}
           onChange={(event) => setTitle(event.target.value)}
         />
       </div>
       <Button type="submit" disabled={isPending} className="mt-4 md:mt-0">
         {isPending ? 'Создаём…' : 'Создать пространство'}
       </Button>
-      {message && (
+      {message !== null && (
         <InlineError id={messageId} role={error ? 'alert' : undefined} className="md:col-span-full">
           {message}
         </InlineError>

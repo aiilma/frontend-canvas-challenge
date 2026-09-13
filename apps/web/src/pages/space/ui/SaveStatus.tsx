@@ -1,3 +1,4 @@
+import { isApiError } from '@/shared/api/error';
 import { cn } from '@/shared/lib/cn';
 import { TextAction } from '@/shared/ui/TextAction';
 import { saveStatusLabel, useGraphStore } from '@/entities/graph';
@@ -8,8 +9,10 @@ interface SaveStatusProps {
 
 export const SaveStatus = ({ className }: SaveStatusProps) => {
   const status = useGraphStore((state) => state.save.status);
+  const saveError = useGraphStore((state) => state.save.error);
   const flush = useGraphStore((state) => state.flush);
   const isTrouble = status === 'error' || status === 'halted';
+  const detail = status === 'error' && isApiError(saveError) ? `: ${saveError.message}` : '';
 
   return (
     <div
@@ -20,7 +23,7 @@ export const SaveStatus = ({ className }: SaveStatusProps) => {
         className,
       )}
     >
-      <span>{saveStatusLabel[status]}</span>
+      <span>{`${saveStatusLabel[status]}${detail}`}</span>
       {status === 'error' && (
         <TextAction glyph="arrow" className="text-caption" onClick={() => void flush()}>
           Повторить
