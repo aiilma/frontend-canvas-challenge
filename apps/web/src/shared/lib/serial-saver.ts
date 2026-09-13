@@ -17,7 +17,6 @@ export interface SerialSaver<S, R> {
   resume: () => void;
   getState: () => SaverState;
   subscribe: (listener: () => void) => () => void;
-  dispose: () => void;
 }
 
 interface Waiter<R> {
@@ -106,10 +105,5 @@ export const createSerialSaver = <S, R>({
     };
   };
 
-  const dispose = () => {
-    clearTimer();
-    listeners.clear();
-  };
-
-  return { schedule, flush, resume, getState: () => state, subscribe, dispose };
+  return { schedule, flush, resume, getState: () => state, subscribe };
 };

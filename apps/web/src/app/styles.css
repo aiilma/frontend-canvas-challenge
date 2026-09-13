@@ -1,4 +1,5 @@
 @import '@fontsource-variable/inter';
+@import '@xyflow/react/dist/style.css';
 @import 'tailwindcss';
 
 @theme {
@@ -93,4 +94,54 @@
     outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
+}
+
+.react-flow {
+  --xy-background-color-default: var(--color-page);
+  --xy-background-pattern-dots-color-default: color-mix(
+    in srgb,
+    var(--color-muted) 25%,
+    transparent
+  );
+  --xy-node-border-radius-default: 0;
+  --xy-node-boxshadow-hover-default: none;
+  --xy-node-boxshadow-selected-default: none;
+  --xy-edge-stroke-default: var(--color-ink);
+  --xy-edge-stroke-width-default: 1;
+  --xy-edge-stroke-selected-default: var(--color-accent);
+  --xy-connectionline-stroke-default: var(--color-ink);
+  --xy-handle-background-color-default: var(--color-ink);
+  --xy-handle-border-color-default: var(--color-ink);
+  --xy-controls-button-background-color-default: var(--color-surface);
+  --xy-controls-button-background-color-hover-default: var(--color-page);
+  --xy-controls-button-border-color-default: var(--color-hairline);
+  --xy-controls-button-color-default: var(--color-ink);
+  --xy-controls-box-shadow-default: none;
+  --xy-selection-background-color-default: color-mix(in srgb, var(--color-ink) 6%, transparent);
+  --xy-selection-border-default: 1px solid var(--color-ink);
+}
+
+.react-flow__handle {
+  width: 8px;
+  height: 8px;
+  border-radius: 0;
+}
+
+.react-flow__handle.connectingto.valid,
+.react-flow__handle.connectionindicator:hover {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.react-flow__controls {
+  box-shadow: none;
+}
+
+.react-flow__controls-button {
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.react-flow__node:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
 }

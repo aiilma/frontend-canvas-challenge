@@ -173,14 +173,4 @@ describe('createSerialSaver', () => {
 
     expect(seen).toEqual(['dirty', 'saving', 'idle']);
   });
-
-  it('dispose отменяет отложенное сохранение', async () => {
-    const { saver, save } = setup();
-
-    saver.schedule('a');
-    saver.dispose();
-    await vi.advanceTimersByTimeAsync(DELAY_MS * 2);
-
-    expect(save).not.toHaveBeenCalled();
-  });
 });
