@@ -161,6 +161,25 @@ describe('createSerialSaver', () => {
     await expect(flushed).resolves.toEqual({ snapshot: 'b', etag: '"2"' });
   });
 
+  it('halt снаружи отменяет отложенное сохранение и держит очередь до resume', async () => {
+    const { saver, save, pending } = setup();
+
+    saver.schedule('a');
+    saver.halt('conflict');
+    await vi.advanceTimersByTimeAsync(DELAY_MS * 2);
+    expect(saver.getState()).toEqual({ status: 'halted', error: 'conflict' });
+    expect(save).not.toHaveBeenCalled();
+    await expect(saver.flush()).rejects.toBe('conflict');
+
+    saver.resume();
+    expect(saver.getState().status).toBe('dirty');
+    const flushed = saver.flush();
+    expect(save).toHaveBeenLastCalledWith('a');
+    pending[0]?.resolve('"1"');
+
+    await expect(flushed).resolves.toEqual({ snapshot: 'a', etag: '"1"' });
+  });
+
   it('подписчик видит dirty, saving и idle по очереди', async () => {
     const { saver, pending } = setup();
     const seen: string[] = [];

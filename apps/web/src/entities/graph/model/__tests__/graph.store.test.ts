@@ -157,7 +157,9 @@ describe('createGraphStore', () => {
     const after = store.getState().indexes;
 
     expect(after.sourceOfInput).toBe(before.sourceOfInput);
+    expect(after.nodeById).not.toBe(before.nodeById);
     expect(after.nodeById.get(promptId)?.data).toEqual({ text: 'Море' });
+    expect(before.nodeById.get(promptId)?.data).toEqual({ text: 'Горы на рассвете' });
   });
 
   it('ноды и связи получают русские имена для чтения с экрана', () => {
@@ -253,5 +255,31 @@ describe('createGraphStore', () => {
     expect(readServer).toHaveBeenCalledTimes(1);
     expect(save).toHaveBeenLastCalledWith(expect.stringContaining('Море и горы'), '"server"');
     expect(store.getState().save.status).toBe('idle');
+  });
+
+  it('конфликт при запуске генерации останавливает сохранение, запись своей версии отправляет сохранённый граф заново', async () => {
+    const { store, save, readServer } = setup(true);
+
+    store.getState().haltOnConflict(new Error('409'));
+    expect(store.getState().save.status).toBe('halted');
+    store.getState().setPromptText(promptId, 'Море');
+    await settle();
+    expect(save).not.toHaveBeenCalled();
+    await expect(store.getState().flush()).rejects.toThrow('409');
+
+    await expect(store.getState().overwriteServer()).resolves.toBe('"server"+');
+    expect(readServer).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledWith(expect.stringContaining('Море'), '"server"');
+    expect(store.getState().etag).toBe('"server"+');
+  });
+
+  it('ошибка, не считающаяся конфликтом, очередь не останавливает', async () => {
+    const { store, save } = setup();
+
+    store.getState().haltOnConflict(new Error('500'));
+    store.getState().setPromptText(promptId, 'Море');
+    await settle();
+
+    expect(save).toHaveBeenCalledTimes(1);
   });
 });

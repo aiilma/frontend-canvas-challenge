@@ -2,17 +2,17 @@ import { Handle, type NodeProps, Position } from '@xyflow/react';
 
 import { apiBaseUrl } from '@/shared/config/env';
 import { type ResultNode as ResultNodeType, useGraphStore } from '@/entities/graph';
-import { resultFor, useGenerations } from '@/entities/generation';
+import { attemptFor, useGenerations } from '@/entities/generation';
 
 import { NodeFrame } from './NodeFrame';
 
 export const ResultNode = ({ id, data, selected }: NodeProps<ResultNodeType>) => {
   const spaceId = useGraphStore((state) => state.spaceId);
   const { index } = useGenerations(spaceId);
-  const result = index ? resultFor(id, index) : null;
-  const latest = index?.byResult.get(id);
+  const attempt = index ? attemptFor(id, index) : null;
+  const result = attempt?.status === 'succeeded' ? attempt : null;
   const placeholder =
-    latest?.status === 'failed' ? 'Отказ генерации. Повторите в генераторе.' : 'Нет результата';
+    attempt?.status === 'failed' ? 'Отказ генерации. Повторите в генераторе.' : 'Нет результата';
 
   return (
     <NodeFrame id={id} title={data.label} selected={selected}>

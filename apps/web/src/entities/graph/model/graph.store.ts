@@ -56,6 +56,7 @@ export interface GraphState extends GraphSnapshot {
   setScenario: (nodeId: string, scenario: Scenario) => void;
   connectSelected: () => void;
   flush: () => Promise<string>;
+  haltOnConflict: (error: unknown) => void;
   overwriteServer: () => Promise<string>;
 }
 
@@ -140,7 +141,7 @@ export const createGraphStore = ({
   shouldHalt,
 }: GraphStoreOptions) =>
   createStore<GraphState>((set, get) => {
-    let lastSentJson = serializeGraph(graph);
+    let lastSentJson: string | null = serializeGraph(graph);
     let lostAnswerFor: string | null = null;
 
     const adopt = (json: string, etag: string) => {
@@ -237,10 +238,9 @@ export const createGraphStore = ({
         const node = indexes.nodeById.get(nodeId);
         if (node?.type !== 'prompt') return;
         const updated: GraphNode = { ...node, data: { text } };
-        indexes.nodeById.set(nodeId, updated);
         set({
           nodes: nodes.map((item) => (item.id === nodeId ? updated : item)),
-          indexes: { ...indexes },
+          indexes: { ...indexes, nodeById: new Map(indexes.nodeById).set(nodeId, updated) },
         });
         schedule();
       },
@@ -257,9 +257,15 @@ export const createGraphStore = ({
 
       flush: async () => (await saver.flush()) ?? get().etag,
 
+      haltOnConflict: (error) => {
+        if (shouldHalt(error)) saver.halt(error);
+      },
+
       overwriteServer: async () => {
         set({ etag: (await readServer()).etag });
+        lastSentJson = null;
         saver.resume();
+        saver.schedule(get());
         return (await saver.flush()) ?? get().etag;
       },
     };

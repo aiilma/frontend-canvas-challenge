@@ -12,7 +12,8 @@ interface GraphStoreProviderProps extends VersionedGraph {
   children: ReactNode;
 }
 
-const isVersionConflict = (error: unknown) => isApiError(error) && error.status === 412;
+const isVersionConflict = (error: unknown) =>
+  isApiError(error) && (error.status === 412 || error.code === 'GRAPH_CHANGED');
 
 export const GraphStoreProvider = ({ spaceId, graph, etag, children }: GraphStoreProviderProps) => {
   const [store] = useState(() =>
