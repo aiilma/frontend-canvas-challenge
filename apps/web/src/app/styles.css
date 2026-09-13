@@ -1,0 +1,96 @@
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+@theme {
+  --color-*: initial;
+  --color-page: #e7e7e7;
+  --color-surface: #ffffff;
+  --color-ink: #242529;
+  --color-muted: #5f6067;
+  --color-accent: #ee3b2b;
+  --color-accent-deep: #c9291a;
+  --color-success: #1b6f35;
+  --color-warning: #6f4800;
+  --color-hairline: #b3b4b8;
+  --color-white: #ffffff;
+
+  --font-*: initial;
+  --font-sans: 'Inter Variable', -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+
+  --text-*: initial;
+  --text-caption: 13px;
+  --text-caption--line-height: 1.3;
+  --text-body: 16px;
+  --text-body--line-height: 1.3;
+  --text-section: 20px;
+  --text-section--line-height: 1.2;
+  --text-title: clamp(24px, 2.5vw, 32px);
+  --text-title--line-height: 1.2;
+  --text-display: clamp(28px, 3.875vw, 44px);
+  --text-display--line-height: 1.2;
+
+  --tracking-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+  --spacing: 4px;
+  --default-transition-duration: 180ms;
+  --ease-panel: cubic-bezier(0.76, 0, 0.24, 1);
+
+  --animate-fade-in: fade-in 300ms ease-out;
+  --animate-fade-out: fade-out 300ms ease-out;
+  --animate-progress: progress 1.2s linear infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+}
+
+@layer base {
+  html {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.3;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
