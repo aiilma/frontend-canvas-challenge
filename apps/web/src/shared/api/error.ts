@@ -56,7 +56,7 @@ export const parseFailure = (response: AxiosResponse<unknown>, cause?: unknown) 
   new ApiError({
     kind: 'parse',
     code: 'UNEXPECTED_RESPONSE',
-    message: 'Сервер ответил в неожиданном формате.',
+    message: 'Сервер ответил в неожиданном формате. Повторите попытку.',
     status: response.status,
     requestId: requestIdOf(response),
     cause,

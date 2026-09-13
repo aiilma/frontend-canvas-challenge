@@ -17,7 +17,7 @@ export const InlineError = ({
 }: InlineErrorProps) => (
   <span
     className={cn(
-      'flex items-center gap-1 text-caption',
+      'flex items-start gap-1 text-caption wrap-break-word',
       tone === 'inverse' ? 'text-white' : 'text-warning',
       className,
     )}

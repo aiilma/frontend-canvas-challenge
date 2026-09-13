@@ -6,13 +6,14 @@ import { hoverUnderline } from '@/shared/lib/classes';
 import { cn } from '@/shared/lib/cn';
 
 const buttonVariants = cva(
-  'inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 whitespace-nowrap transition-colors disabled:pointer-events-none',
   {
     variants: {
       variant: {
-        primary: 'h-11 bg-ink px-5 font-medium text-white hover:bg-ink/90',
-        brand: 'h-11 bg-accent-deep px-5 font-medium text-white hover:bg-accent-deep/90',
-        text: cn('min-h-6 gap-1 text-ink', hoverUnderline),
+        primary: 'h-11 bg-ink px-5 font-medium text-white hover:bg-ink/90 disabled:bg-muted',
+        brand:
+          'h-11 bg-accent-deep px-5 font-medium text-white hover:bg-accent-deep/90 disabled:bg-muted',
+        text: cn('min-h-6 gap-1 text-ink disabled:text-muted', hoverUnderline),
       },
       tone: {
         default: '',
@@ -20,7 +21,11 @@ const buttonVariants = cva(
       },
     },
     compoundVariants: [
-      { variant: 'brand', tone: 'inverse', class: 'bg-white text-ink hover:bg-white/90' },
+      {
+        variant: 'brand',
+        tone: 'inverse',
+        class: 'bg-white text-ink hover:bg-white/90 disabled:bg-white/60',
+      },
       { variant: 'text', tone: 'inverse', class: 'text-white' },
     ],
     defaultVariants: {

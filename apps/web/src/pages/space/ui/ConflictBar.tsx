@@ -14,15 +14,17 @@ export const ConflictBar = ({ onReload }: ConflictBarProps) => {
   return (
     <div
       role="alert"
-      className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-2 bg-surface px-3 py-3 md:px-5"
+      className="flex shrink-0 flex-wrap items-center gap-x-12 gap-y-2 bg-surface px-3 py-3 md:px-5"
     >
       <span>Пространство изменено на сервере.</span>
-      <TextAction glyph="arrow" onClick={onReload}>
-        Перечитать
-      </TextAction>
-      <TextAction glyph="arrow" onClick={() => void overwriteServer()}>
-        Записать мою версию
-      </TextAction>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <TextAction glyph="arrow" onClick={onReload}>
+          Загрузить версию с сервера
+        </TextAction>
+        <TextAction glyph="arrow" onClick={() => void overwriteServer()}>
+          Заменить версию на сервере
+        </TextAction>
+      </div>
     </div>
   );
 };

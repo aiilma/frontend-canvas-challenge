@@ -3,7 +3,12 @@ import { Link } from 'react-router';
 
 import { maxNodes } from '@/shared/config/limits';
 import { TextAction } from '@/shared/ui/TextAction';
-import { type GraphNodeType, useGraphStore } from '@/entities/graph';
+import {
+  connectableSelection,
+  type GraphNodeType,
+  nodeTypeLabels,
+  useGraphStore,
+} from '@/entities/graph';
 
 import { SaveStatus } from './SaveStatus';
 
@@ -11,15 +16,15 @@ interface SpaceTopbarProps {
   title: string;
 }
 
-const nodeActions: { type: GraphNodeType; label: string }[] = [
-  { type: 'prompt', label: 'Текст' },
-  { type: 'generator', label: 'Генератор' },
-  { type: 'result', label: 'Результат' },
-];
+const nodeTypes: GraphNodeType[] = ['prompt', 'generator', 'result'];
 
 export const SpaceTopbar = ({ title }: SpaceTopbarProps) => {
   const count = useGraphStore((state) => state.nodes.length);
   const addNode = useGraphStore((state) => state.addNode);
+  const connectSelected = useGraphStore((state) => state.connectSelected);
+  const canConnectSelected = useGraphStore(
+    (state) => connectableSelection(state.nodes, state.indexes) !== null,
+  );
   const { screenToFlowPosition } = useReactFlow();
   const isFull = count >= maxNodes;
 
@@ -36,23 +41,30 @@ export const SpaceTopbar = ({ title }: SpaceTopbarProps) => {
   };
 
   return (
-    <header className="flex min-h-13 shrink-0 flex-wrap items-center justify-between gap-x-6 gap-y-1 bg-page px-3 py-2 md:px-5">
-      <div className="flex min-w-0 items-baseline gap-3">
+    <header className="flex min-h-13 shrink-0 flex-wrap items-center gap-x-12 gap-y-1 bg-page px-3 py-2 md:px-5">
+      <div className="flex min-w-0 grow items-baseline gap-3">
         <Link to="/" className="font-medium">
           Canvas
         </Link>
-        <span className="truncate text-muted">{title}</span>
+        <h1 className="truncate text-body text-muted" title={title}>
+          {title}
+        </h1>
+        <SaveStatus className="ms-auto" />
       </div>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
-        <SaveStatus />
-        <nav aria-label="Добавить ноду" className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {nodeActions.map(({ type, label }) => (
-            <TextAction key={type} glyph="plus" disabled={isFull} onClick={() => handleAdd(type)}>
-              {label}
-            </TextAction>
-          ))}
-          {isFull && <span className="text-caption text-muted">Максимум {maxNodes} нод</span>}
-        </nav>
+      <div
+        role="group"
+        aria-label="Действия с нодами"
+        className="ms-auto flex flex-wrap items-center gap-x-6 gap-y-1"
+      >
+        {nodeTypes.map((type) => (
+          <TextAction key={type} glyph="plus" disabled={isFull} onClick={() => handleAdd(type)}>
+            {nodeTypeLabels[type]}
+          </TextAction>
+        ))}
+        {isFull && <span className="text-caption text-muted">Максимум {maxNodes} нод</span>}
+        <TextAction glyph="arrow" disabled={!canConnectSelected} onClick={connectSelected}>
+          Соединить выбранные
+        </TextAction>
       </div>
     </header>
   );

@@ -36,7 +36,7 @@ describe('SpacesPage', () => {
     server.use(listHandler([]));
     renderPage();
 
-    expect(await screen.findByText('Пространств пока нет.')).toBeVisible();
+    expect(await screen.findByText(/^Пространств пока нет./)).toBeVisible();
   });
 
   it('ошибка списка показывает полосу с повтором и перечитывает список', async () => {
@@ -62,7 +62,7 @@ describe('SpacesPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Создать пространство' }));
 
     expect(screen.getByLabelText('Название пространства')).toHaveAccessibleDescription(
-      'Введите название пространства',
+      'Введите название пространства.',
     );
     expect(calls()).toBe(0);
   });

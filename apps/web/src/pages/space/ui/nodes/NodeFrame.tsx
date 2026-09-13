@@ -3,6 +3,7 @@ import { useReactFlow } from '@xyflow/react';
 
 import { cn } from '@/shared/lib/cn';
 import { TextAction } from '@/shared/ui/TextAction';
+import { useGraphStore } from '@/entities/graph';
 
 interface NodeFrameProps {
   id: string;
@@ -12,13 +13,23 @@ interface NodeFrameProps {
   children: ReactNode;
 }
 
+const focusNextNode = () => {
+  const node = document.querySelector<HTMLElement>('.react-flow__node');
+  if (node) node.focus();
+};
+
 export const NodeFrame = ({ id, title, selected, failed = false, children }: NodeFrameProps) => {
   const { deleteElements } = useReactFlow();
+  const ariaLabel = useGraphStore((state) => state.indexes.nodeById.get(id)?.ariaLabel ?? title);
+
+  const handleDelete = () => {
+    void deleteElements({ nodes: [{ id }] }).then(focusNextNode);
+  };
 
   return (
     <div
       className={cn(
-        'relative flex w-60 flex-col gap-3 border bg-surface p-3',
+        'relative flex w-60 flex-col gap-4 border bg-surface p-3',
         failed ? 'border-accent' : selected ? 'border-ink' : 'border-hairline',
       )}
     >
@@ -27,7 +38,8 @@ export const NodeFrame = ({ id, title, selected, failed = false, children }: Nod
         <TextAction
           glyph="arrow"
           className="nodrag text-caption"
-          onClick={() => void deleteElements({ nodes: [{ id }] })}
+          aria-label={`Удалить ноду «${ariaLabel}»`}
+          onClick={handleDelete}
         >
           Удалить
         </TextAction>

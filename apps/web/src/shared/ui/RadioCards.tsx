@@ -17,6 +17,7 @@ interface RadioCardsProps {
   onChange: (value: string) => void;
   error?: string;
   tone?: Tone;
+  compact?: boolean;
   className?: string;
 }
 
@@ -40,6 +41,7 @@ export const RadioCards = ({
   onChange,
   error,
   tone = 'default',
+  compact = false,
   className,
 }: RadioCardsProps) => {
   const id = useId();
@@ -58,9 +60,14 @@ export const RadioCards = ({
         aria-describedby={error ? errorId : undefined}
         value={value}
         onValueChange={onChange}
+        className={cn(compact && 'grid-flow-col gap-2')}
       >
         {options.map((option) => (
-          <RadioGroupItem key={option.value} value={option.value} className={classes.item}>
+          <RadioGroupItem
+            key={option.value}
+            value={option.value}
+            className={cn(classes.item, compact && 'min-h-8 px-3 py-1')}
+          >
             <span className="flex flex-col">
               <span>{option.title}</span>
               {option.description !== undefined && (

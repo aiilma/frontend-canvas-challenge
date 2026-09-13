@@ -15,7 +15,7 @@ const versioned = ({ data, etag }: ApiResponse<GraphData>): VersionedGraph => {
     throw new ApiError({
       kind: 'parse',
       code: 'MISSING_ETAG',
-      message: 'Сервер не вернул версию графа.',
+      message: 'Сервер не вернул версию графа. Повторите сохранение.',
     });
   }
   return { graph: data, etag };

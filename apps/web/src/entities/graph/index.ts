@@ -1,7 +1,12 @@
 export { graphKeys } from './api/graph.keys';
 export { useGraph } from './api/use-graph';
 export { useGraphStore, useGraphStoreApi } from './model/graph-store-context';
-export { type GraphState, type Scenario } from './model/graph.store';
+export {
+  connectableSelection,
+  type GraphState,
+  nodeTypeLabels,
+  type Scenario,
+} from './model/graph.store';
 export {
   type GeneratorNode,
   type GraphEdge,

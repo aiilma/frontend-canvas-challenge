@@ -1,12 +1,25 @@
+import { cn } from '@/shared/lib/cn';
 import { TextAction } from '@/shared/ui/TextAction';
 import { saveStatusLabel, useGraphStore } from '@/entities/graph';
 
-export const SaveStatus = () => {
+interface SaveStatusProps {
+  className?: string;
+}
+
+export const SaveStatus = ({ className }: SaveStatusProps) => {
   const status = useGraphStore((state) => state.save.status);
   const flush = useGraphStore((state) => state.flush);
+  const isTrouble = status === 'error' || status === 'halted';
 
   return (
-    <div role="status" className="flex items-center gap-2 text-caption text-muted">
+    <div
+      role="status"
+      className={cn(
+        'flex items-center gap-2 text-caption',
+        isTrouble ? 'text-warning' : 'text-muted',
+        className,
+      )}
+    >
       <span>{saveStatusLabel[status]}</span>
       {status === 'error' && (
         <TextAction glyph="arrow" className="text-caption" onClick={() => void flush()}>

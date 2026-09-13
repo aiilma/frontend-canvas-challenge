@@ -10,6 +10,9 @@ export const ResultNode = ({ id, data, selected }: NodeProps<ResultNodeType>) =>
   const spaceId = useGraphStore((state) => state.spaceId);
   const { index } = useGenerations(spaceId);
   const result = index ? resultFor(id, index) : null;
+  const latest = index?.byResult.get(id);
+  const placeholder =
+    latest?.status === 'failed' ? 'Отказ генерации. Повторите в генераторе.' : 'Нет результата';
 
   return (
     <NodeFrame id={id} title={data.label} selected={selected}>
@@ -17,11 +20,12 @@ export const ResultNode = ({ id, data, selected }: NodeProps<ResultNodeType>) =>
         <img
           src={`${apiBaseUrl}${result.imageUrl}`}
           alt={`Изображение по описанию: ${result.prompt}`}
-          className="aspect-4/3 w-full object-cover"
+          decoding="async"
+          className="aspect-4/3 w-full bg-page object-cover"
         />
       ) : (
-        <div className="flex aspect-4/3 items-center justify-center bg-page text-caption text-muted">
-          Нет результата
+        <div className="flex aspect-4/3 items-center justify-center bg-page px-3 text-center text-caption text-muted">
+          {placeholder}
         </div>
       )}
       <Handle type="target" position={Position.Left} />

@@ -117,6 +117,49 @@ describe('createGraphStore', () => {
     expect(store.getState().indexes.sourceOfInput.get(generatorId)).toBe(promptId);
   });
 
+  it('ноды и связи получают русские имена для чтения с экрана', () => {
+    const { store } = setup();
+    store.getState().addNode('prompt', { x: 0, y: 0 });
+
+    expect(store.getState().nodes.map((node) => node.ariaLabel)).toEqual([
+      'Текст 1',
+      'Генератор 1',
+      'Результат 1',
+      'Текст 2',
+    ]);
+    expect(store.getState().edges[0]?.ariaLabel).toBe('Связь: Текст 1 → Генератор 1');
+  });
+
+  it('две выделенные совместимые ноды соединяются без мыши в любом порядке выделения', () => {
+    const { store } = setup();
+    store.getState().onEdgesChange([{ type: 'remove', id: `${generatorId}->${resultId}` }]);
+    store.getState().onNodesChange([
+      { type: 'select', id: resultId, selected: true },
+      { type: 'select', id: generatorId, selected: true },
+    ]);
+
+    store.getState().connectSelected();
+
+    const edge = store.getState().edges.at(-1);
+    expect(edge).toMatchObject({ source: generatorId, target: resultId });
+    expect(edge?.ariaLabel).toBe('Связь: Генератор 1 → Результат 1');
+  });
+
+  it('несовместимое или неполное выделение не создаёт связь', () => {
+    const { store } = setup();
+    const before = store.getState().edges.length;
+    store.getState().onNodesChange([
+      { type: 'select', id: promptId, selected: true },
+      { type: 'select', id: resultId, selected: true },
+    ]);
+
+    store.getState().connectSelected();
+    store.getState().onNodesChange([{ type: 'select', id: resultId, selected: false }]);
+    store.getState().connectSelected();
+
+    expect(store.getState().edges).toHaveLength(before);
+  });
+
   it('добавление ноды сверх лимита игнорируется', () => {
     const { store } = setup();
     for (let i = 0; i < 30; i += 1) store.getState().addNode('prompt', { x: i, y: 0 });

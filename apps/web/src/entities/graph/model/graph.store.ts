@@ -15,7 +15,7 @@ import { type GraphData } from '@canvas/contracts';
 import { maxNodes } from '@/shared/config/limits';
 import { createSerialSaver, type SaverState } from '@/shared/lib/serial-saver';
 
-import { type GraphIndexes, indexGraph } from './graph-rules';
+import { canConnect, type GraphIndexes, indexGraph } from './graph-rules';
 import {
   type GraphEdge,
   type GraphNode,
@@ -49,19 +49,71 @@ export interface GraphState extends GraphSnapshot {
   setPromptText: (nodeId: string, text: string) => void;
   addNode: (type: GraphNodeType, position: XYPosition) => void;
   setScenario: (nodeId: string, scenario: Scenario) => void;
+  connectSelected: () => void;
   flush: () => Promise<string>;
   overwriteServer: () => Promise<string>;
 }
 
-const labels: Record<Exclude<GraphNodeType, 'prompt'>, string> = {
+export const nodeTypeLabels: Record<GraphNodeType, string> = {
+  prompt: 'Текст',
   generator: 'Генератор',
   result: 'Результат',
 };
 
-const createNode = (type: GraphNodeType, position: XYPosition): GraphNode => {
+const ariaLabelFor = (type: GraphNodeType, ordinal: number) => `${nodeTypeLabels[type]} ${ordinal}`;
+
+const countOfType = (nodes: readonly GraphNode[], type: GraphNodeType) => {
+  let count = 0;
+  for (const node of nodes) if (node.type === type) count += 1;
+  return count;
+};
+
+const withAriaLabels = (nodes: GraphData['nodes']): GraphNode[] => {
+  const seen: Record<GraphNodeType, number> = { prompt: 0, generator: 0, result: 0 };
+  return nodes.map((node) => {
+    seen[node.type] += 1;
+    return { ...node, ariaLabel: ariaLabelFor(node.type, seen[node.type]) };
+  });
+};
+
+const createNode = (type: GraphNodeType, position: XYPosition, ordinal: number): GraphNode => {
   const id = crypto.randomUUID();
-  if (type === 'prompt') return { id, type, position, data: { text: '' } };
-  return { id, type, position, data: { label: labels[type] } };
+  const ariaLabel = ariaLabelFor(type, ordinal);
+  if (type === 'prompt') return { id, type, position, data: { text: '' }, ariaLabel };
+  return { id, type, position, data: { label: nodeTypeLabels[type] }, ariaLabel };
+};
+
+const edgeLabel = (source: GraphNode | undefined, target: GraphNode | undefined) =>
+  `Связь: ${source?.ariaLabel ?? '?'} → ${target?.ariaLabel ?? '?'}`;
+
+const withEdgeLabels = (edges: GraphData['edges'], nodeById: Map<string, GraphNode>) =>
+  edges.map((edge) => ({
+    ...edge,
+    ariaLabel: edgeLabel(nodeById.get(edge.source), nodeById.get(edge.target)),
+  }));
+
+export const selectedPair = (nodes: readonly GraphNode[]): [GraphNode, GraphNode] | null => {
+  const picked: GraphNode[] = [];
+  for (const node of nodes) {
+    if (!node.selected) continue;
+    if (picked.length === 2) return null;
+    picked.push(node);
+  }
+  const [first, second] = picked;
+  return first && second ? [first, second] : null;
+};
+
+export const connectableSelection = (
+  nodes: readonly GraphNode[],
+  indexes: GraphIndexes,
+): Connection | null => {
+  const pair = selectedPair(nodes);
+  if (!pair) return null;
+  const [a, b] = pair;
+  const forward = { source: a.id, target: b.id, sourceHandle: null, targetHandle: null };
+  if (canConnect(forward, indexes)) return forward;
+  const backward = { source: b.id, target: a.id, sourceHandle: null, targetHandle: null };
+  return canConnect(backward, indexes) ? backward : null;
 };
 
 const savingNodeChanges = new Set<NodeChange['type']>(['add', 'remove', 'replace', 'position']);
@@ -104,14 +156,31 @@ export const createGraphStore = ({
     const setGraph = (nodes: GraphNode[], edges: GraphEdge[]) =>
       set({ nodes, edges, indexes: indexGraph(nodes, edges) });
 
+    const initialNodes = withAriaLabels(graph.nodes);
+    const initialIndexes = indexGraph(initialNodes, graph.edges);
+
+    const connect = (connection: Connection) => {
+      const { nodes, edges, indexes } = get();
+      const edge: GraphEdge = {
+        ...connection,
+        id: crypto.randomUUID(),
+        ariaLabel: edgeLabel(
+          indexes.nodeById.get(connection.source),
+          indexes.nodeById.get(connection.target),
+        ),
+      };
+      setGraph(nodes, addEdge(edge, edges));
+      schedule();
+    };
+
     return {
       spaceId,
-      nodes: graph.nodes,
-      edges: graph.edges,
+      nodes: initialNodes,
+      edges: withEdgeLabels(graph.edges, initialIndexes.nodeById),
       viewport: graph.viewport,
       etag,
       save: saver.getState(),
-      indexes: indexGraph(graph.nodes, graph.edges),
+      indexes: initialIndexes,
       scenarios: {},
 
       onNodesChange: (changes) => {
@@ -129,9 +198,11 @@ export const createGraphStore = ({
         } else set({ edges });
       },
 
-      onConnect: (connection) => {
-        setGraph(get().nodes, addEdge({ ...connection, id: crypto.randomUUID() }, get().edges));
-        schedule();
+      onConnect: connect,
+
+      connectSelected: () => {
+        const connection = connectableSelection(get().nodes, get().indexes);
+        if (connection) connect(connection);
       },
 
       setViewport: (viewport) => {
@@ -150,7 +221,7 @@ export const createGraphStore = ({
       addNode: (type, position) => {
         const { nodes, edges } = get();
         if (nodes.length >= maxNodes) return;
-        setGraph([...nodes, createNode(type, position)], edges);
+        setGraph([...nodes, createNode(type, position, countOfType(nodes, type) + 1)], edges);
         schedule();
       },
 
