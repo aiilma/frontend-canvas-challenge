@@ -1,11 +1,19 @@
-import { HttpResponse, type HttpResponseResolver } from 'msw';
+import { HttpResponse, type HttpResponseResolver, type JsonBodyType } from 'msw';
 
 import { apiBaseUrl } from '@/shared/config/env';
 
 export const api = (path: string) => `${apiBaseUrl}${path}`;
 
+export const requestId = 'req-1';
+
+export const jsonResponse = (body: JsonBodyType, init: ResponseInit = {}) =>
+  HttpResponse.json(body, {
+    ...init,
+    headers: { 'X-Request-Id': requestId, ...init.headers },
+  });
+
 export const errorResponse = (status: number, code: string, message: string) =>
-  HttpResponse.json({ error: { code, message } }, { status });
+  jsonResponse({ error: { code, message } }, { status });
 
 export const counting = (resolver: HttpResponseResolver) => {
   let calls = 0;
